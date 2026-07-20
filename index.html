@@ -1,0 +1,1628 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>벚꽃 내리는 시대에 결투를 — 카드 데이터베이스</title>
+<style>
+:root{
+  --ink:#151019;
+  --ink-2:#1e1723;
+  --ink-3:#2a2130;
+  --line:#3a2e3f;
+  --petal:#e8869f;
+  --petal-soft:#f2b8c6;
+  --gold:#c9a15a;
+  --paper:#f3ece7;
+  --paper-dim:#c9bfc2;
+  --danger:#c96a5a;
+  --font-display:"Noto Serif KR","Nanum Myeongjo",serif;
+  --font-body:"Pretendard","Apple SD Gothic Neo",sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:radial-gradient(ellipse at top, #201829 0%, var(--ink) 55%);
+  color:var(--paper);
+  font-family:var(--font-body);
+  min-height:100vh;
+  padding-bottom:80px;
+}
+::selection{background:var(--petal);color:var(--ink);}
+
+/* ---------- header ---------- */
+header{
+  position:sticky; top:0; z-index:40;
+  background:linear-gradient(180deg, rgba(21,16,25,.97), rgba(21,16,25,.9));
+  backdrop-filter:blur(6px);
+  border-bottom:1px solid var(--line);
+  padding:18px 28px;
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+  flex-wrap:wrap;
+}
+.brand{display:flex; align-items:baseline; gap:12px;}
+.brand .petal-mark{font-size:22px; color:var(--petal); filter:drop-shadow(0 0 6px rgba(232,134,159,.5));}
+.brand h1{
+  font-family:var(--font-display); font-size:20px; font-weight:700; margin:0;
+  letter-spacing:.02em;
+}
+.brand .sub{font-size:12px; color:var(--paper-dim); letter-spacing:.05em;}
+.toolbar{display:flex; gap:8px; flex-wrap:wrap;}
+button{
+  font-family:var(--font-body); cursor:pointer; border-radius:8px;
+  border:1px solid var(--line); background:var(--ink-3); color:var(--paper);
+  padding:9px 14px; font-size:13px; transition:.15s;
+}
+button:hover{border-color:var(--petal); color:var(--petal-soft);}
+button.primary{background:var(--petal); border-color:var(--petal); color:var(--ink); font-weight:600;}
+button.primary:hover{background:var(--petal-soft); color:var(--ink);}
+button.ghost{background:transparent;}
+button.small{padding:5px 10px; font-size:12px;}
+button:disabled{opacity:.4; cursor:not-allowed;}
+
+/* ---------- layout ---------- */
+main{max-width:1180px; margin:0 auto; padding:28px;}
+.crumb{display:flex; align-items:center; gap:8px; margin-bottom:18px; font-size:13px; color:var(--paper-dim);}
+.crumb button{padding:4px 10px;}
+.crumb .cur{color:var(--petal-soft); font-family:var(--font-display);}
+
+/* goddess grid */
+.god-grid{
+  display:grid; grid-template-columns:repeat(6, 1fr); gap:14px;
+}
+.god-card{
+  position:relative; aspect-ratio:3/4; border-radius:12px; overflow:hidden;
+  border:1px solid var(--line); background:var(--ink-2);
+  cursor:pointer; transition:.18s;
+}
+.god-card:hover{transform:translateY(-3px); border-color:var(--petal);
+  box-shadow:0 10px 24px -8px rgba(232,134,159,.35);}
+.god-card img{width:100%; height:100%; object-fit:contain; object-position:center top; display:block;}
+.god-card .empty-mark{
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  font-size:28px; color:var(--line);
+}
+.god-card .name{
+  position:absolute; left:0; right:0; bottom:0; padding:8px 8px 7px;
+  background:linear-gradient(0deg, rgba(0,0,0,.85), transparent);
+  font-family:var(--font-display); font-size:13px; font-weight:600;
+  text-shadow:0 1px 3px rgba(0,0,0,.6);
+}
+.god-card .count-pill{
+  position:absolute; top:6px; right:6px; background:rgba(21,16,25,.75);
+  border:1px solid var(--line); border-radius:20px; padding:2px 8px; font-size:10px; color:var(--paper-dim);
+}
+.god-card .img-next{
+  position:absolute; bottom:6px; right:6px; z-index:5; width:24px; height:24px; border-radius:50%;
+  background:rgba(21,16,25,.8); border:1px solid var(--line); color:var(--paper);
+  display:flex; align-items:center; justify-content:center; font-size:12px; cursor:pointer;
+}
+.god-card .img-next:hover{border-color:var(--petal); color:var(--petal-soft);}
+.god-card.add-new{
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+  border-style:dashed; color:var(--paper-dim);
+}
+.god-card.add-new:hover{color:var(--petal-soft);}
+.god-card.add-new .plus{font-size:26px; line-height:1;}
+
+/* ---------- goddess detail ---------- */
+.god-header{
+  display:flex; gap:20px; align-items:center; margin-bottom:24px; flex-wrap:wrap;
+}
+.god-header .portrait{
+  width:96px; height:128px; border-radius:10px; overflow:hidden; border:1px solid var(--line);
+  background:var(--ink-2); flex-shrink:0; position:relative; cursor:pointer;
+}
+.god-header .portrait img{width:100%; height:100%; object-fit:cover;}
+.god-header .portrait .edit-hint{
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  background:rgba(0,0,0,.55); opacity:0; transition:.15s; font-size:10px; text-align:center; padding:6px; line-height:1.4;
+}
+.god-header .portrait:hover .edit-hint{opacity:1;}
+.portrait-col{display:flex; flex-direction:column; gap:8px; flex-shrink:0;}
+.portrait-thumbs{display:flex; flex-wrap:wrap; gap:5px; width:96px;}
+.portrait-thumb{
+  width:26px; height:34px; border-radius:5px; overflow:hidden; border:1.5px solid var(--line);
+  cursor:pointer; position:relative; flex-shrink:0;
+}
+.portrait-thumb.active{border-color:var(--petal);}
+.portrait-thumb img{width:100%; height:100%; object-fit:cover; display:block;}
+.portrait-thumb .thumb-del{
+  position:absolute; top:-3px; right:-3px; width:14px; height:14px; border-radius:50%;
+  background:var(--danger); color:#fff; font-size:9px; display:none; align-items:center; justify-content:center; line-height:1;
+}
+.portrait-thumb:hover .thumb-del{display:flex;}
+.god-header .meta h2{font-family:var(--font-display); font-size:26px; margin:0 0 4px;}
+.god-header .meta input.name-edit{
+  font-family:var(--font-display); font-size:26px; background:transparent; border:none;
+  border-bottom:1px solid var(--petal); color:var(--paper); padding:2px 0; width:260px;
+}
+.god-header .meta .stat-row{display:flex; gap:14px; font-size:12px; color:var(--paper-dim);}
+.trait-row{margin:4px 0 8px;}
+.trait-display{cursor:pointer; display:inline-flex; align-items:center; gap:9px; flex-wrap:wrap; min-height:24px;}
+.trait-display:hover .trait-name{border-color:var(--gold);}
+.trait-name{
+  font-size:12.5px; color:var(--gold); border:1px solid var(--line); border-radius:20px;
+  padding:3px 12px; background:rgba(201,161,90,.08); font-weight:600;
+}
+.trait-name:empty::before{content:"+ 특성 추가"; color:var(--paper-dim); font-weight:400;}
+.trait-desc{font-size:12px; color:var(--paper-dim);}
+.trait-edit-row{display:flex; gap:6px; align-items:center; flex-wrap:wrap;}
+.trait-name-input{
+  width:130px; font-size:12.5px; background:var(--ink-3); border:1px solid var(--gold); border-radius:20px;
+  padding:3px 12px; color:var(--paper);
+}
+.trait-desc-input{
+  flex:1; min-width:180px; font-size:12.5px; background:var(--ink-3); border:1px solid var(--line); border-radius:20px;
+  padding:3px 12px; color:var(--paper);
+}
+.god-header .danger-zone{margin-left:auto;}
+
+/* 재사용 가능한 미니 초상화 (어나더 폼 등) */
+.mini-portrait{
+  width:64px; height:86px; border-radius:9px; overflow:hidden; border:1px solid var(--line);
+  background:var(--ink-2); flex-shrink:0; position:relative; cursor:pointer;
+}
+.mini-portrait img{width:100%; height:100%; object-fit:cover;}
+.mini-portrait .empty-mark{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:20px; color:var(--line);}
+.mini-portrait .edit-hint{
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  background:rgba(0,0,0,.55); opacity:0; transition:.15s; font-size:9.5px; text-align:center; padding:4px;
+}
+.mini-portrait:hover .edit-hint{opacity:1;}
+.another-header{display:flex; gap:14px; align-items:center; margin-bottom:18px;}
+.another-header .ah-label{font-family:var(--font-display); font-size:15px; color:var(--paper); margin-bottom:3px;}
+.another-header .ah-hint{font-size:11px; color:var(--paper-dim);}
+
+/* 추가판 */
+.bonus-form-section{
+  margin:0 0 26px; padding:18px; border:1px solid var(--line); border-radius:12px; background:var(--ink-2);
+}
+.bonus-form-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;}
+.bonus-form-body{display:flex; gap:18px; flex-wrap:wrap;}
+.bonus-form-portrait{
+  width:150px; height:200px; border-radius:10px; overflow:hidden; border:1px solid var(--line);
+  background:var(--ink-3); position:relative; cursor:pointer; flex-shrink:0;
+}
+.bonus-form-portrait img{width:100%; height:100%; object-fit:cover;}
+.bonus-form-portrait .empty-mark{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:30px; color:var(--line);}
+.bonus-form-portrait .edit-hint{
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  background:rgba(0,0,0,.55); opacity:0; transition:.15s; font-size:11px; text-align:center; line-height:1.4;
+}
+.bonus-form-portrait:hover .edit-hint{opacity:1;}
+#bonusFormDesc{
+  flex:1; min-width:220px; min-height:200px; background:var(--ink-3); border:1px solid var(--line); border-radius:8px;
+  color:var(--paper); padding:12px; font-size:13.5px; line-height:1.65; resize:vertical; font-family:var(--font-body);
+}
+
+.tabs{display:flex; gap:6px; border-bottom:1px solid var(--line); margin-bottom:20px;}
+.tab-btn{
+  background:none; border:none; border-bottom:2px solid transparent; border-radius:0;
+  padding:10px 16px; font-size:14px; color:var(--paper-dim); font-family:var(--font-display);
+}
+.tab-btn.active{color:var(--petal-soft); border-bottom-color:var(--petal);}
+.tab-btn:hover{color:var(--paper);}
+.tab-count{font-size:10px; color:var(--paper-dim); font-family:var(--font-body); margin-left:4px;}
+
+.card-section{display:none;}
+.card-section.active{display:block;}
+.another-version-bar{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px; align-items:center; }
+.version-chip{
+  background:var(--ink-3); border:1px solid var(--line); color:var(--paper-dim);
+  border-radius:20px; padding:6px 14px; font-size:12.5px; cursor:pointer; font-family:var(--font-body);
+}
+.version-chip.active{ border-color:var(--petal); color:var(--petal-soft); background:rgba(232,134,159,.12); }
+.version-chip.add{ border-style:dashed; }
+.version-chip.danger{ border-color:var(--danger); color:var(--danger); margin-left:auto; }
+.flow-label{ font-family:var(--font-display); font-size:14px; color:var(--paper-dim); margin:0 0 12px; font-weight:500; }
+.swap-tag{
+  margin-top:34px; font-size:11px; color:var(--gold); text-align:center; width:176px; line-height:1.3;
+}
+.swap-tag.alt{ color:var(--petal-soft); }
+.card-flow{
+  display:flex; flex-wrap:wrap; gap:30px 20px; align-items:flex-start;
+}
+
+/* ---------- stacked card unit ---------- */
+.stack-unit{
+  position:relative; width:176px; padding-bottom:0;
+}
+.stack-unit .extra-layer{
+  position:absolute; left:8px; right:8px; bottom:-18px; height:248px;
+  border-radius:12px; overflow:hidden; border:1px solid var(--line);
+  background:var(--ink-3); box-shadow:0 6px 14px -6px rgba(0,0,0,.6);
+}
+.stack-unit .extra-layer img{width:100%; height:100%; object-fit:cover; opacity:.9;}
+.stack-unit .extra-layer.l2{left:16px; right:0; bottom:-32px; z-index:1;}
+.stack-unit .extra-layer.l1{z-index:2;}
+.stack-unit .extra-badge{
+  position:absolute; bottom:-16px; right:-4px; z-index:5; background:var(--gold); color:var(--ink);
+  font-size:10px; font-weight:700; border-radius:20px; padding:2px 7px; border:1px solid var(--ink);
+}
+.card-face{
+  position:relative; z-index:3; width:176px; height:248px; border-radius:12px; overflow:hidden;
+  border:1px solid var(--line); background:var(--ink-2); cursor:pointer; transition:.15s;
+}
+.card-face:hover{border-color:var(--petal); transform:translateY(-2px);}
+.card-face img{width:100%; height:100%; object-fit:cover; display:block;}
+.card-face .no-img{display:flex; align-items:center; justify-content:center; height:100%; color:var(--line); font-size:13px;}
+.card-face .cname{
+  position:absolute; left:0; right:0; bottom:0; padding:8px 9px;
+  background:linear-gradient(0deg, rgba(0,0,0,.88), transparent);
+  font-size:13.5px; font-weight:600; font-family:var(--font-display);
+}
+.card-type-tag{
+  position:absolute; top:6px; left:6px; z-index:6; font-size:10px; padding:2px 7px; border-radius:20px;
+  background:rgba(21,16,25,.8); border:1px solid var(--line); color:var(--paper-dim);
+}
+.card-with-extra{margin-bottom:28px;}
+.add-card-tile{
+  width:176px; height:248px; border-radius:12px; border:1px dashed var(--line);
+  display:flex; align-items:center; justify-content:center; color:var(--paper-dim); font-size:30px;
+  cursor:pointer;
+}
+.add-card-tile:hover{border-color:var(--petal); color:var(--petal-soft);}
+
+.empty-note{color:var(--paper-dim); font-size:13px; padding:20px 0;}
+
+/* ---------- modal ---------- */
+.overlay{
+  position:fixed; inset:0; background:rgba(10,7,12,.72); backdrop-filter:blur(3px);
+  display:none; align-items:flex-start; justify-content:center; z-index:100; padding:40px 16px; overflow-y:auto;
+}
+.overlay.show{display:flex;}
+.modal{
+  background:var(--ink-2); border:1px solid var(--line); border-radius:14px; width:100%; max-width:480px;
+  padding:24px; animation:pop .15s ease;
+}
+@keyframes pop{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);}}
+.modal h3{font-family:var(--font-display); margin:0 0 16px; font-size:18px; color:var(--petal-soft);}
+.field{margin-bottom:14px;}
+.field label{display:block; font-size:12px; color:var(--paper-dim); margin-bottom:6px;}
+.field input[type=text], .field textarea, .field select{
+  width:100%; background:var(--ink-3); border:1px solid var(--line); border-radius:8px;
+  color:var(--paper); padding:9px 11px; font-size:13px; font-family:var(--font-body);
+}
+.field textarea{min-height:80px; resize:vertical;}
+.field .img-drop{
+  border:1px dashed var(--line); border-radius:10px; padding:14px; text-align:center; font-size:12px;
+  color:var(--paper-dim); cursor:pointer; position:relative; overflow:hidden;
+}
+.field .img-drop img{max-width:100%; max-height:140px; display:block; margin:0 auto 6px; border-radius:6px;}
+.field input[type=file]{display:none;}
+.modal-actions{display:flex; justify-content:space-between; align-items:center; margin-top:18px; gap:8px;}
+.modal-actions .right{display:flex; gap:8px;}
+.radio-row{display:flex; gap:14px; font-size:12px;}
+.radio-row label{display:flex; align-items:center; gap:6px; color:var(--paper);}
+
+/* card detail modal */
+.detail-modal{max-width:640px;}
+.detail-layout{display:flex; gap:20px; align-items:flex-start;}
+.detail-img-col{width:220px; flex-shrink:0;}
+.detail-modal .big-img{width:100%; border-radius:10px; border:1px solid var(--line); display:block;}
+.detail-text-col{flex:1; min-width:0;}
+.detail-modal h3{margin:0 0 4px;}
+.detail-modal .type-label{font-size:11px; color:var(--gold); margin-bottom:12px; letter-spacing:.04em;}
+.detail-modal .desc{
+  font-size:13.5px; line-height:1.7; white-space:pre-wrap; color:#ecdfe2;
+  max-height:340px; overflow-y:auto; padding-right:6px;
+}
+.detail-modal .attached-list{margin-top:16px; border-top:1px solid var(--line); padding-top:14px;}
+.detail-modal .attached-list h4{font-size:12px; color:var(--paper-dim); margin:0 0 10px; font-weight:500;}
+@media (max-width:600px){
+  .detail-layout{flex-direction:column;}
+  .detail-img-col{width:100%; max-width:220px;}
+}
+.mini-attach{display:flex; gap:10px; align-items:center; margin-bottom:10px; cursor:pointer;}
+.mini-attach img{width:40px; height:56px; object-fit:cover; border-radius:5px; border:1px solid var(--line);}
+.mini-attach .t{font-size:12.5px;}
+.mini-attach .t small{display:block; color:var(--paper-dim); font-size:10.5px;}
+
+/* toast */
+#toast{
+  position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+  background:var(--ink-3); border:1px solid var(--petal); color:var(--paper);
+  padding:10px 18px; border-radius:30px; font-size:13px; z-index:200; opacity:0; transition:.25s;
+  pointer-events:none;
+}
+#toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+/* settings modal specifics */
+.settings-modal .field small{display:block; margin-top:6px; color:var(--paper-dim); line-height:1.5;}
+.settings-modal a{color:var(--petal-soft);}
+.url-input-row{display:flex; gap:8px;}
+.url-input-row input{flex:1;}
+.url-input-row button{flex-shrink:0;}
+
+footer.hint{
+  max-width:1180px; margin:40px auto 0; padding:0 28px; font-size:12px; color:var(--paper-dim); line-height:1.7;
+}
+
+@media (max-width:600px){
+  header{padding:14px 16px;} main{padding:18px;}
+  .god-grid{grid-template-columns:repeat(3, 1fr);}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <span class="petal-mark">&#10047;</span>
+    <div>
+      <h1>벚꽃 내리는 시대에 결투를</h1>
+      <div class="sub">카드 데이터베이스 입력 도구</div>
+    </div>
+  </div>
+  <div class="toolbar">
+    <button class="primary small" id="btnSettings">⚙ 드라이브 설정</button>
+    <button class="primary small" id="btnFetchFromDrive">☁ 드라이브에서 가져오기</button>
+    <button id="btnExport">JSON 내보내기</button>
+    <button id="btnImport">JSON 불러오기</button>
+    <input type="file" id="importFile" accept="application/json" style="display:none">
+  </div>
+</header>
+
+<main>
+  <div class="crumb" id="crumb">
+    <button class="ghost small" id="crumbHome">전체 여신</button>
+  </div>
+
+  <div id="viewGodList">
+    <div class="god-grid" id="godGrid"></div>
+  </div>
+
+  <div id="viewGodDetail" style="display:none;">
+    <div class="god-header">
+      <div class="portrait-col">
+        <div class="portrait" id="godPortrait">
+          <img id="godPortraitImg" style="display:none;">
+          <div class="empty-mark" id="godPortraitEmpty">＋</div>
+          <div class="edit-hint">클릭해서 그림 추가<br>(Ctrl+V로도 추가)</div>
+          <input type="file" id="godPortraitFile" accept="image/*" style="display:none;">
+        </div>
+        <div class="portrait-thumbs" id="godPortraitThumbs"></div>
+      </div>
+      <div class="meta">
+        <h2 id="godNameDisplay"></h2>
+        <input type="text" class="name-edit" id="godNameEdit" style="display:none;">
+        <div class="trait-row">
+          <div class="trait-display" id="traitDisplay">
+            <span class="trait-name" id="traitNameDisplay"></span>
+            <span class="trait-desc" id="traitDescDisplay"></span>
+          </div>
+          <div class="trait-edit-row" id="traitEditRow" style="display:none;">
+            <input type="text" id="traitNameEdit" class="trait-name-input" placeholder="특성 이름">
+            <input type="text" id="traitDescEdit" class="trait-desc-input" placeholder="특성 설명">
+            <button class="ghost small" id="traitSaveBtn">저장</button>
+          </div>
+        </div>
+        <div class="stat-row" id="godStatRow"></div>
+      </div>
+      <div class="danger-zone">
+        <button class="ghost small" id="btnDeleteGod">여신 삭제</button>
+      </div>
+    </div>
+
+    <div class="bonus-form-section">
+      <div class="bonus-form-header">
+        <h4 class="flow-label">추가판</h4>
+        <button class="ghost small" id="btnDeleteBonusForm" style="display:none;">추가판 삭제</button>
+      </div>
+      <div class="bonus-form-body" id="bonusFormBody" style="display:none;">
+        <div class="bonus-form-portrait" id="bonusFormPortrait">
+          <img id="bonusFormImg" style="display:none;">
+          <div class="empty-mark" id="bonusFormImgEmpty">＋</div>
+          <div class="edit-hint">클릭해서<br>이미지 변경</div>
+          <input type="file" id="bonusFormFile" accept="image/*" style="display:none;">
+        </div>
+        <textarea id="bonusFormDesc" placeholder="추가판 관련 내용을 적어주세요"></textarea>
+      </div>
+      <div class="empty-note" id="bonusFormEmptyNote">이 여신은 아직 추가판이 없어요. <button class="ghost small" id="btnAddBonusForm">+ 추가판 추가</button></div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="normal">통상패 <span class="tab-count" id="cntNormal"></span></button>
+      <button class="tab-btn" data-tab="secret">비장패 <span class="tab-count" id="cntSecret"></span></button>
+      <button class="tab-btn" data-tab="extra">독립 추가패 <span class="tab-count" id="cntExtra"></span></button>
+      <button class="tab-btn" data-tab="another">어나더 <span class="tab-count" id="cntAnotherVer"></span></button>
+    </div>
+
+    <div class="card-section active" data-section="normal">
+      <div class="card-flow" id="flowNormal"></div>
+    </div>
+    <div class="card-section" data-section="secret">
+      <div class="card-flow" id="flowSecret"></div>
+    </div>
+    <div class="card-section" data-section="extra">
+      <div class="card-flow" id="flowExtra"></div>
+    </div>
+    <div class="card-section" data-section="another">
+      <div class="another-header" id="anotherPortraitWrap" style="display:none;">
+        <div class="mini-portrait" id="anotherPortrait">
+          <img id="anotherPortraitImg" style="display:none;">
+          <div class="empty-mark" id="anotherPortraitEmpty">＋</div>
+          <div class="edit-hint">클릭 또는<br>Ctrl+V로 변경</div>
+          <input type="file" id="anotherPortraitFile" accept="image/*" style="display:none;">
+        </div>
+        <div>
+          <div class="ah-label" id="anotherPortraitLabel">이 버전의 여신 모습</div>
+          <div class="ah-hint">클릭해서 업로드하거나, 이미지 복사한 뒤 Ctrl+V로 붙여넣기</div>
+        </div>
+      </div>
+      <div class="another-version-bar" id="anotherVersionBar"></div>
+      <div class="empty-note" id="anotherEmptyNote">아직 어나더 버전이 없어요. 위에서 "+ 버전 추가"를 눌러 만들어보세요.</div>
+      <div id="anotherVersionBody" style="display:none;">
+        <h4 class="flow-label">통상패</h4>
+        <div class="card-flow" id="flowAnotherNormal"></div>
+        <h4 class="flow-label">비장패</h4>
+        <div class="card-flow" id="flowAnotherSecret"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="hint">
+  데이터는 이 브라우저(IndexedDB)에 저장되고, <strong>⚙ 드라이브 설정</strong>에 주소를 넣어두면
+  카드를 추가·수정할 때마다 몇 초 뒤 자동으로 제작자의 구글 드라이브에 저장됩니다(전송 버튼을 매번 누를 필요 없음).
+  처음 사용 시 관리자(제작자)에게 받은 Apps Script 주소를 <strong>⚙ 드라이브 설정</strong>에 한 번만 붙여넣어주세요.
+</footer>
+
+<!-- 카드 추가/수정 모달 -->
+<div class="overlay" id="overlayCard">
+  <div class="modal">
+    <h3 id="cardModalTitle">카드 추가</h3>
+    <div class="field" id="parentTypeField">
+      <label>카드 종류</label>
+      <div class="radio-row" id="cardTypeRadios"></div>
+    </div>
+    <div class="field" id="attachField" style="display:none;">
+      <label>어떤 카드에 붙는 추가패인가요?</label>
+      <select id="attachParentSelect"></select>
+    </div>
+    <div class="field" id="replaceField" style="display:none;">
+      <label>교환되는 오리지널 카드 (선택사항)</label>
+      <select id="replaceTargetSelect"></select>
+    </div>
+    <div class="field">
+      <label>카드 이미지</label>
+      <div class="img-drop" id="cardImgDrop">
+        <span id="cardImgPlaceholder">클릭해서 이미지 업로드 (또는 Ctrl+V로 붙여넣기)</span>
+        <img id="cardImgPreview" style="display:none;">
+      </div>
+      <input type="file" id="cardImgFile" accept="image/*">
+    </div>
+    <div class="field">
+      <label>카드 이름</label>
+      <input type="text" id="cardNameInput" placeholder="예: 벚꽃 베기">
+    </div>
+    <div class="field">
+      <label>효과 설명</label>
+      <textarea id="cardDescInput" placeholder="카드 효과를 적어주세요"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="ghost small" id="btnDeleteCard" style="display:none;">이 카드 삭제</button>
+      <div class="right">
+        <button class="ghost" id="cardModalCancel">취소</button>
+        <button class="primary" id="cardModalSave">저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 카드 상세 보기 모달 -->
+<div class="overlay" id="overlayDetail">
+  <div class="modal detail-modal">
+    <div class="detail-layout">
+      <div class="detail-img-col">
+        <img class="big-img" id="detailImg" style="display:none;">
+      </div>
+      <div class="detail-text-col">
+        <h3 id="detailName"></h3>
+        <div class="type-label" id="detailType"></div>
+        <div class="desc" id="detailDesc"></div>
+      </div>
+    </div>
+    <div class="attached-list" id="detailAttachedWrap" style="display:none;">
+      <h4>딸린 추가패</h4>
+      <div id="detailAttachedList"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="ghost small" id="btnAddAttach">＋ 추가패 붙이기</button>
+      <div class="right">
+        <button class="ghost" id="btnEditCard">수정</button>
+        <button class="primary" id="detailClose">닫기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 여신 추가/수정 모달 -->
+<div class="overlay" id="overlayGod">
+  <div class="modal">
+    <h3>여신 추가</h3>
+    <div class="field">
+      <label>여신 이미지</label>
+      <div class="img-drop" id="newGodImgDrop">
+        <span id="newGodImgPlaceholder">클릭해서 이미지 업로드 (또는 Ctrl+V로 붙여넣기)</span>
+        <img id="newGodImgPreview" style="display:none;">
+      </div>
+      <input type="file" id="newGodImgFile" accept="image/*">
+    </div>
+    <div class="field">
+      <label>여신 이름</label>
+      <input type="text" id="newGodNameInput" placeholder="예: 아마츠카미 유즈리하">
+    </div>
+    <div class="modal-actions">
+      <div></div>
+      <div class="right">
+        <button class="ghost" id="newGodCancel">취소</button>
+        <button class="primary" id="newGodSave">추가</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 설정 모달 -->
+<div class="overlay" id="overlaySettings">
+  <div class="modal settings-modal">
+    <h3>구글 드라이브 연동 설정</h3>
+    <div class="field">
+      <label>Apps Script 웹앱 URL</label>
+      <div class="url-input-row">
+        <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/.../exec">
+        <button class="ghost small" id="scriptUrlCopyBtn" type="button">복사</button>
+      </div>
+      <small>기본으로 제작자의 드라이브 주소가 들어가 있어요. 그대로 "저장"만 눌러도 되고,
+      다른 주소를 쓰고 싶다면 바꿔서 저장하면 돼요. 이 값은 이 브라우저에만 저장됩니다.<br>
+      새로 설정을 만들고 싶다면 함께 받은 <code>apps-script-setup.md</code> 안내를 참고해주세요.</small>
+    </div>
+    <div class="modal-actions">
+      <div></div>
+      <div class="right">
+        <button class="ghost" id="settingsCancel">닫기</button>
+        <button class="primary" id="settingsSave">저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 텍스트 입력용 미니 모달 (브라우저 기본 prompt 대체) -->
+<div class="overlay" id="overlayPrompt">
+  <div class="modal" style="max-width:340px;">
+    <h3 id="promptTitle">입력</h3>
+    <div class="field">
+      <input type="text" id="promptInput">
+    </div>
+    <div class="modal-actions">
+      <div></div>
+      <div class="right">
+        <button class="ghost" id="promptCancel">취소</button>
+        <button class="primary" id="promptOk">확인</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 확인용 미니 모달 (브라우저 기본 confirm 대체) -->
+<div class="overlay" id="overlayConfirm">
+  <div class="modal" style="max-width:340px;">
+    <h3 id="confirmTitle">확인</h3>
+    <div class="modal-actions">
+      <div></div>
+      <div class="right">
+        <button class="ghost" id="confirmCancel">취소</button>
+        <button class="primary" id="confirmOk">확인</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ================= IndexedDB 저장소 ================= */
+const DB_NAME = 'sakura-duel-carddb';
+const STORE = 'data';
+let db;
+
+function openDB(){
+  return new Promise((resolve,reject)=>{
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = e=>{
+      const d = e.target.result;
+      if(!d.objectStoreNames.contains(STORE)) d.createObjectStore(STORE);
+    };
+    req.onsuccess = e=>resolve(e.target.result);
+    req.onerror = e=>reject(e);
+  });
+}
+function idbGet(key){
+  return new Promise((resolve,reject)=>{
+    const tx = db.transaction(STORE,'readonly');
+    const r = tx.objectStore(STORE).get(key);
+    r.onsuccess=()=>resolve(r.result);
+    r.onerror=e=>reject(e);
+  });
+}
+function idbSet(key,val){
+  return new Promise((resolve,reject)=>{
+    const tx = db.transaction(STORE,'readwrite');
+    tx.objectStore(STORE).put(val,key);
+    tx.oncomplete=()=>resolve();
+    tx.onerror=e=>reject(e);
+  });
+}
+
+/* ================= 상태 ================= */
+let STATE = { goddesses: [], cards: [] };
+// goddess: {id, name, image}
+// card: {id, goddessId, type: 'normal'|'secret'|'extra', parentId: null|cardId, name, image, description}
+
+let currentGodId = null;
+let currentTab = 'normal';
+let editingCardId = null; // 카드 모달이 수정 모드일 때
+let pendingCardImage = null;
+let pendingAttachParentId = null; // "추가패 붙이기"로 들어왔을 때 강제 부모
+let currentDetailCardId = null;
+let currentAnotherVersionId = null; // 지금 보고 있는 어나더 버전
+let pendingVersionId = null; // 카드 모달에서 저장할 versionId
+let pendingReplaceTargetId = null;
+
+function uid(){ return 'id_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+
+async function saveState(){
+  await idbSet('maindata', STATE);
+  scheduleAutoSend();
+}
+async function loadState(){
+  const d = await idbGet('maindata');
+  if(d) STATE = d;
+  migrateGodImages();
+}
+// 예전 데이터(image 단일 필드)를 images 배열로 변환 + JSON 불러오기한 데이터에도 적용
+function migrateGodImages(){
+  (STATE.goddesses||[]).forEach(g=>{
+    if(!g.images){
+      g.images = g.image ? [g.image] : [];
+    }
+  });
+}
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toast._h);
+  toast._h = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* ================= prompt/confirm 대체 (미리보기 등 샌드박스 환경에서도 동작) ================= */
+function askText(title, defaultValue=''){
+  return new Promise(resolve=>{
+    const overlay = document.getElementById('overlayPrompt');
+    const input = document.getElementById('promptInput');
+    const okBtn = document.getElementById('promptOk');
+    const cancelBtn = document.getElementById('promptCancel');
+    document.getElementById('promptTitle').textContent = title;
+    input.value = defaultValue;
+    overlay.classList.add('show');
+    setTimeout(()=>{ input.focus(); input.select(); }, 30);
+    function cleanup(result){
+      overlay.classList.remove('show');
+      okBtn.removeEventListener('click', onOk);
+      cancelBtn.removeEventListener('click', onCancel);
+      input.removeEventListener('keydown', onKey);
+      resolve(result);
+    }
+    function onOk(){ cleanup(input.value.trim() || null); }
+    function onCancel(){ cleanup(null); }
+    function onKey(e){ if(e.key==='Enter') onOk(); else if(e.key==='Escape') onCancel(); }
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+    input.addEventListener('keydown', onKey);
+  });
+}
+function askConfirm(title){
+  return new Promise(resolve=>{
+    const overlay = document.getElementById('overlayConfirm');
+    const okBtn = document.getElementById('confirmOk');
+    const cancelBtn = document.getElementById('confirmCancel');
+    document.getElementById('confirmTitle').textContent = title;
+    overlay.classList.add('show');
+    function cleanup(result){
+      overlay.classList.remove('show');
+      okBtn.removeEventListener('click', onOk);
+      cancelBtn.removeEventListener('click', onCancel);
+      resolve(result);
+    }
+    function onOk(){ cleanup(true); }
+    function onCancel(){ cleanup(false); }
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+  });
+}
+
+/* ================= 파일 -> base64 ================= */
+function fileToDataUrl(file){
+  return new Promise((resolve,reject)=>{
+    const r = new FileReader();
+    r.onload = ()=>resolve(r.result);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+// 큰 이미지는 리사이즈해서 용량을 줄임
+function resizeImage(dataUrl, maxW=640){
+  return new Promise((resolve)=>{
+    const img = new Image();
+    img.onload = ()=>{
+      let {width,height} = img;
+      if(width > maxW){
+        height = Math.round(height * (maxW/width));
+        width = maxW;
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      canvas.getContext('2d').drawImage(img,0,0,width,height);
+      resolve(canvas.toDataURL('image/jpeg', 0.85));
+    };
+    img.onerror = ()=>resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+
+/* ================= 렌더: 여신 목록 ================= */
+function godCardCount(godId){
+  return STATE.cards.filter(c=>c.goddessId===godId).length;
+}
+let gridPreviewIndex = {}; // 홈 화면에서 "다음 그림" 훑어보기용 (저장 안 됨, 새로고침하면 초기화)
+function renderGodList(){
+  const grid = document.getElementById('godGrid');
+  grid.innerHTML = '';
+  STATE.goddesses.forEach(g=>{
+    const el = document.createElement('div');
+    el.className = 'god-card';
+    const idx = gridPreviewIndex[g.id] || 0;
+    const cover = (g.images && g.images[idx]) || null;
+    const nextBtn = (g.images && g.images.length > 1) ? `<div class="img-next" title="다음 그림">⟳</div>` : '';
+    el.innerHTML = `
+      ${cover ? `<img src="${cover}">` : `<div class="empty-mark">${g.name?.[0]||'?'}</div>`}
+      ${nextBtn}
+      <div class="count-pill">${godCardCount(g.id)}장</div>
+      <div class="name">${g.name}</div>
+    `;
+    el.onclick = ()=>openGodDetail(g.id);
+    const nextEl = el.querySelector('.img-next');
+    if(nextEl){
+      nextEl.onclick = (e)=>{
+        e.stopPropagation();
+        gridPreviewIndex[g.id] = ((gridPreviewIndex[g.id] || 0) + 1) % g.images.length;
+        renderGodList();
+      };
+    }
+    grid.appendChild(el);
+  });
+  const addEl = document.createElement('div');
+  addEl.className = 'god-card add-new';
+  addEl.innerHTML = `<div class="plus">＋</div><div>여신 추가 (${STATE.goddesses.length}/26)</div>`;
+  addEl.onclick = openNewGodModal;
+  grid.appendChild(addEl);
+}
+
+/* ================= 여신 상세 화면 ================= */
+function openGodDetail(godId){
+  currentGodId = godId;
+  currentTab = 'normal';
+  currentAnotherVersionId = null;
+  currentGodPortraitIndex = 0;
+  document.getElementById('viewGodList').style.display = 'none';
+  document.getElementById('viewGodDetail').style.display = 'block';
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab==='normal'));
+  document.querySelectorAll('.card-section').forEach(s=>s.classList.toggle('active', s.dataset.section==='normal'));
+  renderCrumb();
+  renderGodHeader();
+  renderBonusForm();
+  renderCardFlows();
+}
+function backToList(){
+  currentGodId = null;
+  document.getElementById('viewGodList').style.display = 'block';
+  document.getElementById('viewGodDetail').style.display = 'none';
+  renderCrumb();
+  renderGodList();
+}
+function renderCrumb(){
+  const crumb = document.getElementById('crumb');
+  let html = `<button class="ghost small" id="crumbHome">전체 여신</button>`;
+  if(currentGodId){
+    const g = STATE.goddesses.find(x=>x.id===currentGodId);
+    html += ` <span>›</span> <span class="cur">${g?g.name:''}</span>`;
+  }
+  crumb.innerHTML = html;
+  document.getElementById('crumbHome').onclick = backToList;
+}
+let currentGodPortraitIndex = 0;
+function renderGodHeader(){
+  const g = STATE.goddesses.find(x=>x.id===currentGodId);
+  if(!g) return;
+  if(!g.images) g.images = [];
+  if(!g.trait || typeof g.trait === 'string') g.trait = { name: g.trait || '', description: '' };
+  document.getElementById('godNameDisplay').textContent = g.name;
+  document.getElementById('godNameDisplay').style.display = 'block';
+  document.getElementById('godNameEdit').style.display = 'none';
+  document.getElementById('traitNameDisplay').textContent = g.trait.name || '';
+  document.getElementById('traitDescDisplay').textContent = g.trait.description || '';
+  document.getElementById('traitDisplay').style.display = 'inline-flex';
+  document.getElementById('traitEditRow').style.display = 'none';
+
+  if(currentGodPortraitIndex >= g.images.length) currentGodPortraitIndex = Math.max(0, g.images.length-1);
+  const img = document.getElementById('godPortraitImg');
+  const empty = document.getElementById('godPortraitEmpty');
+  const cur = g.images[currentGodPortraitIndex];
+  if(cur){ img.src = cur; img.style.display='block'; empty.style.display='none'; }
+  else { img.style.display='none'; empty.style.display='flex'; }
+
+  const thumbs = document.getElementById('godPortraitThumbs');
+  thumbs.innerHTML = '';
+  g.images.forEach((im, i)=>{
+    const t = document.createElement('div');
+    t.className = 'portrait-thumb' + (i===currentGodPortraitIndex ? ' active' : '');
+    t.innerHTML = `<img src="${im}"><div class="thumb-del" title="삭제">×</div>`;
+    t.querySelector('img').onclick = ()=>{ currentGodPortraitIndex = i; renderGodHeader(); };
+    t.querySelector('.thumb-del').onclick = async (e)=>{
+      e.stopPropagation();
+      if(!(await askConfirm('이 그림을 삭제할까요?'))) return;
+      g.images.splice(i,1);
+      currentGodPortraitIndex = 0;
+      await saveState();
+      renderGodHeader();
+      renderGodList();
+    };
+    thumbs.appendChild(t);
+  });
+
+  const normal = STATE.cards.filter(c=>c.goddessId===g.id && c.type==='normal' && !c.versionId).length;
+  const secret = STATE.cards.filter(c=>c.goddessId===g.id && c.type==='secret' && !c.versionId).length;
+  const extra = STATE.cards.filter(c=>c.goddessId===g.id && c.type==='extra' && !c.versionId).length;
+  document.getElementById('godStatRow').innerHTML =
+    `<span>통상패 ${normal}</span><span>비장패 ${secret}</span><span>추가패 ${extra}</span>`;
+}
+document.getElementById('godNameDisplay').onclick = ()=>{
+  const g = STATE.goddesses.find(x=>x.id===currentGodId);
+  const disp = document.getElementById('godNameDisplay');
+  const edit = document.getElementById('godNameEdit');
+  disp.style.display='none'; edit.style.display='block';
+  edit.value = g.name; edit.focus();
+};
+document.getElementById('godNameEdit').addEventListener('blur', async ()=>{
+  const g = STATE.goddesses.find(x=>x.id===currentGodId);
+  const val = document.getElementById('godNameEdit').value.trim();
+  if(val) g.name = val;
+  await saveState();
+  renderGodHeader();
+});
+document.getElementById('godNameEdit').addEventListener('keydown', e=>{
+  if(e.key==='Enter') e.target.blur();
+});
+document.getElementById('traitDisplay').onclick = ()=>{
+  const g = STATE.goddesses.find(x=>x.id===currentGodId);
+  if(!g.trait || typeof g.trait === 'string') g.trait = { name: g.trait || '', description: '' };
+  document.getElementById('traitDisplay').style.display = 'none';
+  const row = document.getElementById('traitEditRow');
+  row.style.display = 'flex';
+  document.getElementById('traitNameEdit').value = g.trait.name || '';
+  document.getElementById('traitDescEdit').value = g.trait.description || '';
+  document.getElementById('traitNameEdit').focus();
+};
+async function saveTraitEdit(){
+  const g = STATE.goddesses.find(x=>x.id===currentGodId);
+  g.trait = {
+    name: document.getElementById('traitNameEdit').value.trim(),
+    description: document.getElementById('traitDescEdit').value.trim()
+  };
+  await saveState();
+  renderGodHeader();
+}
+document.getElementById('traitSaveBtn').onclick = saveTraitEdit;
+document.getElementById('traitNameEdit').addEventListener('keydown', e=>{
+  if(e.key==='Enter') saveTraitEdit();
+});
+document.getElementById('traitDescEdit').addEventListener('keydown', e=>{
+  if(e.key==='Enter') saveTraitEdit();
+});
+document.getElementById('godPortrait').onclick = ()=> document.getElementById('godPortraitFile').click();
+document.getElementById('godPortraitFile').addEventListener('change', async e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const raw = await fileToDataUrl(f);
+  const resized = await resizeImage(raw, 480);
+  const g = STATE.goddesses.find(x=>x.id===currentGodId);
+  if(!g.images) g.images = [];
+  g.images.push(resized);
+  currentGodPortraitIndex = g.images.length - 1;
+  await saveState();
+  renderGodHeader();
+  renderGodList();
+  e.target.value = '';
+});
+document.getElementById('btnDeleteGod').onclick = async ()=>{
+  if(!(await askConfirm('이 여신과 딸린 모든 카드를 삭제할까요?'))) return;
+  STATE.cards = STATE.cards.filter(c=>c.goddessId!==currentGodId);
+  STATE.goddesses = STATE.goddesses.filter(g=>g.id!==currentGodId);
+  await saveState();
+  backToList();
+};
+
+/* ================= 추가판 (여신 채용 시 딸려오는 0~1개짜리 콘텐츠) ================= */
+function renderBonusForm(){
+  const g = STATE.goddesses.find(x=>x.id===currentGodId);
+  if(!g) return;
+  const body = document.getElementById('bonusFormBody');
+  const empty = document.getElementById('bonusFormEmptyNote');
+  const delBtn = document.getElementById('btnDeleteBonusForm');
+  if(!g.bonusForm){
+    body.style.display = 'none';
+    empty.style.display = 'block';
+    delBtn.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  body.style.display = 'flex';
+  delBtn.style.display = 'inline-block';
+  const img = document.getElementById('bonusFormImg');
+  const imgEmpty = document.getElementById('bonusFormImgEmpty');
+  if(g.bonusForm.image){ img.src = g.bonusForm.image; img.style.display='block'; imgEmpty.style.display='none'; }
+  else { img.style.display='none'; imgEmpty.style.display='flex'; }
+  document.getElementById('bonusFormDesc').value = g.bonusForm.description || '';
+}
+document.getElementById('btnAddBonusForm').onclick = async ()=>{
+  const g = STATE.goddesses.find(x=>x.id===currentGodId);
+  g.bonusForm = { image: null, description: '' };
+  await saveState();
+  renderBonusForm();
+};
+document.getElementById('btnDeleteBonusForm').onclick = async ()=>{
+  if(!(await askConfirm('이 여신의 추가판을 삭제할까요?'))) return;
+  const g = STATE.goddesses.find(x=>x.id===currentGodId);
+  g.bonusForm = null;
+  await saveState();
+  renderBonusForm();
+};
+document.getElementById('bonusFormPortrait').onclick = ()=> document.getElementById('bonusFormFile').click();
+document.getElementById('bonusFormFile').addEventListener('change', async e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const raw = await fileToDataUrl(f);
+  const resized = await resizeImage(raw, 640);
+  const g = STATE.goddesses.find(x=>x.id===currentGodId);
+  if(!g.bonusForm) g.bonusForm = { image: null, description: '' };
+  g.bonusForm.image = resized;
+  await saveState();
+  renderBonusForm();
+  e.target.value = '';
+});
+document.getElementById('bonusFormDesc').addEventListener('blur', async ()=>{
+  const g = STATE.goddesses.find(x=>x.id===currentGodId);
+  if(!g || !g.bonusForm) return;
+  g.bonusForm.description = document.getElementById('bonusFormDesc').value;
+  await saveState();
+});
+
+/* 탭 전환 */
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.onclick = ()=>{
+    currentTab = btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b===btn));
+    document.querySelectorAll('.card-section').forEach(s=>s.classList.toggle('active', s.dataset.section===currentTab));
+    if(currentTab==='another') renderAnotherTab();
+  };
+});
+
+/* ================= 카드 플로우 렌더 (스택형) ================= */
+function renderCardFlows(){
+  const god = currentGodId;
+  const godObj = STATE.goddesses.find(g=>g.id===god);
+  const normalCards = STATE.cards.filter(c=>c.goddessId===god && c.type==='normal' && !c.versionId);
+  const secretCards = STATE.cards.filter(c=>c.goddessId===god && c.type==='secret' && !c.versionId);
+  const extraStandalone = STATE.cards.filter(c=>c.goddessId===god && c.type==='extra' && !c.parentId && !c.versionId);
+
+  document.getElementById('cntNormal').textContent = normalCards.length;
+  document.getElementById('cntSecret').textContent = secretCards.length;
+  document.getElementById('cntExtra').textContent = extraStandalone.length;
+  document.getElementById('cntAnotherVer').textContent = (godObj.anotherVersions||[]).length || '';
+
+  renderFlow('flowNormal', normalCards, 'normal');
+  renderFlow('flowSecret', secretCards, 'secret');
+  renderFlow('flowExtra', extraStandalone, 'extra');
+}
+
+function renderFlow(containerId, cardsList, type, versionId=null){
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  cardsList.forEach(card=>{
+    const attached = STATE.cards.filter(c=>c.parentId===card.id);
+    const wrap = document.createElement('div');
+    wrap.className = 'stack-unit card-with-extra';
+    let layers = '';
+    attached.slice(0,2).forEach((ac,i)=>{
+      layers += `<div class="extra-layer ${i===0?'l1':'l2'}">${ac.image?`<img src="${ac.image}">`:''}</div>`;
+    });
+    const badge = attached.length ? `<div class="extra-badge">+${attached.length}</div>` : '';
+
+    let swapTag = '';
+    if(card.replacesCardId){
+      const target = STATE.cards.find(c=>c.id===card.replacesCardId);
+      swapTag = `<div class="swap-tag">⇄ ${target?target.name:'(삭제된 카드)'}</div>`;
+    } else {
+      const replacedBy = STATE.cards.filter(c=>c.replacesCardId===card.id);
+      if(replacedBy.length){
+        const names = replacedBy.map(c=>versionNameById(card.goddessId, c.versionId)).filter(Boolean).join(', ');
+        swapTag = `<div class="swap-tag alt">⇄ ${names || '다른 버전'}에서 교체됨</div>`;
+      }
+    }
+
+    wrap.innerHTML = `
+      ${layers}
+      <div class="card-face" data-id="${card.id}">
+        <span class="card-type-tag">${typeLabel(type)}</span>
+        ${card.image ? `<img src="${card.image}">` : `<div class="no-img">이미지 없음</div>`}
+        <div class="cname">${card.name||'(이름 없음)'}</div>
+      </div>
+      ${badge}
+      ${swapTag}
+    `;
+    wrap.querySelector('.card-face').onclick = ()=>openDetailModal(card.id);
+    el.appendChild(wrap);
+  });
+  const addTile = document.createElement('div');
+  addTile.className = 'add-card-tile';
+  addTile.textContent = '＋';
+  addTile.title = type==='extra' ? '독립 추가패 추가' : (type==='normal'?'통상패 추가':'비장패 추가');
+  addTile.onclick = ()=> openCardModal({type, versionId});
+  el.appendChild(addTile);
+}
+function typeLabel(t){
+  return t==='normal' ? '통상패' : t==='secret' ? '비장패' : '추가패';
+}
+function versionNameById(godId, versionId){
+  if(!versionId) return null;
+  const god = STATE.goddesses.find(g=>g.id===godId);
+  const v = ((god && god.anotherVersions) || []).find(v=>v.id===versionId);
+  return v ? v.name : null;
+}
+
+/* ================= 어나더 탭 ================= */
+function renderAnotherTab(){
+  const god = STATE.goddesses.find(g=>g.id===currentGodId);
+  if(!god) return;
+  if(!god.anotherVersions) god.anotherVersions = [];
+  const versions = god.anotherVersions;
+  const bar = document.getElementById('anotherVersionBar');
+  const body = document.getElementById('anotherVersionBody');
+  const empty = document.getElementById('anotherEmptyNote');
+
+  if(!currentAnotherVersionId || !versions.find(v=>v.id===currentAnotherVersionId)){
+    currentAnotherVersionId = versions[0] ? versions[0].id : null;
+  }
+
+  bar.innerHTML = '';
+  versions.forEach(v=>{
+    const chip = document.createElement('button');
+    chip.className = 'version-chip' + (v.id===currentAnotherVersionId ? ' active' : '');
+    chip.textContent = v.name;
+    chip.onclick = ()=>{ currentAnotherVersionId = v.id; renderAnotherTab(); };
+    bar.appendChild(chip);
+  });
+  const addChip = document.createElement('button');
+  addChip.className = 'version-chip add';
+  addChip.textContent = '+ 버전 추가';
+  addChip.onclick = addAnotherVersion;
+  bar.appendChild(addChip);
+  if(currentAnotherVersionId){
+    const delChip = document.createElement('button');
+    delChip.className = 'version-chip danger';
+    delChip.textContent = '이 버전 삭제';
+    delChip.onclick = ()=>deleteAnotherVersion(currentAnotherVersionId);
+    bar.appendChild(delChip);
+  }
+
+  if(versions.length === 0){
+    empty.style.display = 'block';
+    body.style.display = 'none';
+  } else {
+    empty.style.display = 'none';
+    body.style.display = 'block';
+    renderAnotherFlows();
+  }
+  document.getElementById('cntAnotherVer').textContent = versions.length || '';
+  renderAnotherPortrait();
+}
+
+function renderAnotherPortrait(){
+  const god = STATE.goddesses.find(g=>g.id===currentGodId);
+  const wrap = document.getElementById('anotherPortraitWrap');
+  const v = (god.anotherVersions||[]).find(v=>v.id===currentAnotherVersionId);
+  if(!v){ wrap.style.display = 'none'; return; }
+  wrap.style.display = 'flex';
+  document.getElementById('anotherPortraitLabel').textContent = `${v.name}의 여신 모습`;
+  const img = document.getElementById('anotherPortraitImg');
+  const empty = document.getElementById('anotherPortraitEmpty');
+  if(v.image){ img.src = v.image; img.style.display='block'; empty.style.display='none'; }
+  else { img.style.display='none'; empty.style.display='flex'; }
+}
+document.getElementById('anotherPortrait').onclick = ()=> document.getElementById('anotherPortraitFile').click();
+document.getElementById('anotherPortraitFile').addEventListener('change', async e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const raw = await fileToDataUrl(f);
+  const resized = await resizeImage(raw, 480);
+  const god = STATE.goddesses.find(g=>g.id===currentGodId);
+  const v = (god.anotherVersions||[]).find(v=>v.id===currentAnotherVersionId);
+  if(!v) return;
+  v.image = resized;
+  await saveState();
+  renderAnotherPortrait();
+});
+
+async function addAnotherVersion(){
+  const god = STATE.goddesses.find(g=>g.id===currentGodId);
+  if(!god.anotherVersions) god.anotherVersions = [];
+  const name = await askText('버전 이름을 입력해주세요', `어나더 ${god.anotherVersions.length+1}`);
+  if(!name || !name.trim()) return;
+  const v = { id: uid(), name: name.trim() };
+  god.anotherVersions.push(v);
+  currentAnotherVersionId = v.id;
+  await saveState();
+  renderAnotherTab();
+}
+
+async function deleteAnotherVersion(versionId){
+  if(!(await askConfirm('이 어나더 버전과 그 안의 카드를 모두 삭제할까요?'))) return;
+  const god = STATE.goddesses.find(g=>g.id===currentGodId);
+  god.anotherVersions = (god.anotherVersions||[]).filter(v=>v.id!==versionId);
+  const toDelete = new Set(STATE.cards.filter(c=>c.versionId===versionId).map(c=>c.id));
+  STATE.cards.filter(c=>toDelete.has(c.parentId)).forEach(c=>toDelete.add(c.id));
+  STATE.cards = STATE.cards.filter(c=>!toDelete.has(c.id));
+  currentAnotherVersionId = null;
+  await saveState();
+  renderAnotherTab();
+}
+
+function renderAnotherFlows(){
+  const god = currentGodId;
+  const normalCards = STATE.cards.filter(c=>c.goddessId===god && c.type==='normal' && c.versionId===currentAnotherVersionId);
+  const secretCards = STATE.cards.filter(c=>c.goddessId===god && c.type==='secret' && c.versionId===currentAnotherVersionId);
+  renderFlow('flowAnotherNormal', normalCards, 'normal', currentAnotherVersionId);
+  renderFlow('flowAnotherSecret', secretCards, 'secret', currentAnotherVersionId);
+}
+
+/* ================= 카드 추가/수정 모달 ================= */
+const overlayCard = document.getElementById('overlayCard');
+function openCardModal({type, editId=null, forceParentId=null, versionId=null}){
+  editingCardId = editId;
+  pendingCardImage = null;
+  pendingAttachParentId = forceParentId;
+  pendingVersionId = versionId;
+  const editingCard = editId ? STATE.cards.find(c=>c.id===editId) : null;
+  if(editingCard) pendingVersionId = editingCard.versionId || null; // 수정 모드면 카드에 저장된 버전을 우선
+  document.getElementById('cardModalTitle').textContent = editId ? '카드 수정' : '카드 추가';
+  document.getElementById('cardImgPreview').style.display='none';
+  document.getElementById('cardImgPlaceholder').style.display='block';
+  document.getElementById('cardNameInput').value='';
+  document.getElementById('cardDescInput').value='';
+  document.getElementById('btnDeleteCard').style.display = editId ? 'inline-block' : 'none';
+
+  // 카드 종류 라디오 구성
+  const radios = document.getElementById('cardTypeRadios');
+  const typeField = document.getElementById('parentTypeField');
+  const attachField = document.getElementById('attachField');
+  const replaceField = document.getElementById('replaceField');
+
+  if(forceParentId){
+    // "추가패 붙이기"로 들어온 경우: 종류 고정 = extra, attach 대상 고정, 버전은 부모 카드 걸 물려받음
+    typeField.style.display = 'none';
+    attachField.style.display = 'none';
+    radios.innerHTML = '';
+    const parent = STATE.cards.find(c=>c.id===forceParentId);
+    pendingVersionId = parent ? parent.versionId : null;
+  } else if(type === 'extra'){
+    // 독립 추가패 탭에서 + 누른 경우: extra 이지만 원하면 특정 카드에 붙일 수도 있게
+    typeField.style.display = 'none';
+    attachField.style.display = 'block';
+    const options = STATE.cards.filter(c=>c.goddessId===currentGodId && c.type!=='extra' && !c.versionId);
+    document.getElementById('attachParentSelect').innerHTML =
+      `<option value="">붙이지 않음 (독립 추가패)</option>` +
+      options.map(c=>`<option value="${c.id}">${typeLabel(c.type)} · ${c.name}</option>`).join('');
+  } else {
+    typeField.style.display = 'none';
+    attachField.style.display = 'none';
+  }
+
+  // 어나더 카드(통상패/비장패)일 때만: 교환되는 오리지널 카드 선택
+  if(pendingVersionId && type !== 'extra' && !forceParentId){
+    replaceField.style.display = 'block';
+    const originals = STATE.cards.filter(c=>c.goddessId===currentGodId && c.type===type && !c.versionId);
+    document.getElementById('replaceTargetSelect').innerHTML =
+      `<option value="">교환 안 함 (새로 추가되는 카드)</option>` +
+      originals.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  } else {
+    replaceField.style.display = 'none';
+  }
+
+  if(editId){
+    const card = STATE.cards.find(c=>c.id===editId);
+    document.getElementById('cardNameInput').value = card.name||'';
+    document.getElementById('cardDescInput').value = card.description||'';
+    if(card.image){
+      pendingCardImage = card.image;
+      document.getElementById('cardImgPreview').src = card.image;
+      document.getElementById('cardImgPreview').style.display='block';
+      document.getElementById('cardImgPlaceholder').style.display='none';
+    }
+    if(card.parentId && attachField.style.display==='block'){
+      document.getElementById('attachParentSelect').value = card.parentId;
+    }
+    if(card.replacesCardId && replaceField.style.display==='block'){
+      document.getElementById('replaceTargetSelect').value = card.replacesCardId;
+    }
+  }
+  overlayCard.classList.add('show');
+  overlayCard.dataset.type = type;
+}
+document.getElementById('cardImgDrop').onclick = ()=>document.getElementById('cardImgFile').click();
+document.getElementById('cardImgFile').addEventListener('change', async e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const raw = await fileToDataUrl(f);
+  const resized = await resizeImage(raw, 640);
+  pendingCardImage = resized;
+  document.getElementById('cardImgPreview').src = resized;
+  document.getElementById('cardImgPreview').style.display='block';
+  document.getElementById('cardImgPlaceholder').style.display='none';
+});
+document.getElementById('cardModalCancel').onclick = ()=>overlayCard.classList.remove('show');
+document.getElementById('cardModalSave').onclick = async ()=>{
+  const name = document.getElementById('cardNameInput').value.trim();
+  if(!name){ toast('카드 이름을 입력해주세요'); return; }
+  const desc = document.getElementById('cardDescInput').value.trim();
+  const baseType = overlayCard.dataset.type;
+
+  let parentId = null;
+  let type = baseType;
+  let versionId = pendingVersionId;
+  let replacesCardId = null;
+  if(pendingAttachParentId){
+    parentId = pendingAttachParentId;
+    type = 'extra';
+    const parent = STATE.cards.find(c=>c.id===parentId);
+    versionId = parent ? parent.versionId : null;
+  } else if(baseType === 'extra'){
+    const sel = document.getElementById('attachParentSelect').value;
+    parentId = sel || null;
+  }
+  if(document.getElementById('replaceField').style.display==='block'){
+    replacesCardId = document.getElementById('replaceTargetSelect').value || null;
+  }
+
+  if(editingCardId){
+    const card = STATE.cards.find(c=>c.id===editingCardId);
+    card.name = name; card.description = desc; card.image = pendingCardImage;
+    if(document.getElementById('attachField').style.display==='block'){
+      card.parentId = parentId;
+    }
+    if(document.getElementById('replaceField').style.display==='block'){
+      card.replacesCardId = replacesCardId;
+    }
+  } else {
+    STATE.cards.push({
+      id: uid(), goddessId: currentGodId, type, parentId, versionId, replacesCardId,
+      name, description: desc, image: pendingCardImage
+    });
+  }
+  await saveState();
+  overlayCard.classList.remove('show');
+  renderCardFlows();
+  renderGodHeader();
+  if(currentTab==='another') renderAnotherTab();
+  toast('저장했어요');
+};
+document.getElementById('btnDeleteCard').onclick = async ()=>{
+  if(!(await askConfirm('이 카드를 삭제할까요? (붙어있는 추가패도 함께 삭제됩니다)'))) return;
+  const toDelete = new Set([editingCardId]);
+  STATE.cards.filter(c=>c.parentId===editingCardId).forEach(c=>toDelete.add(c.id));
+  STATE.cards = STATE.cards.filter(c=>!toDelete.has(c.id));
+  await saveState();
+  overlayCard.classList.remove('show');
+  renderCardFlows();
+  renderGodHeader();
+  if(currentTab==='another') renderAnotherTab();
+};
+
+/* ================= 카드 상세 보기 모달 ================= */
+const overlayDetail = document.getElementById('overlayDetail');
+function openDetailModal(cardId){
+  currentDetailCardId = cardId;
+  const card = STATE.cards.find(c=>c.id===cardId);
+  const img = document.getElementById('detailImg');
+  if(card.image){ img.src=card.image; img.style.display='block'; } else img.style.display='none';
+  document.getElementById('detailName').textContent = card.name;
+  let typeText = typeLabel(card.type);
+  if(card.versionId) typeText += ` · ${versionNameById(card.goddessId, card.versionId) || '어나더'}`;
+  if(card.replacesCardId){
+    const t = STATE.cards.find(c=>c.id===card.replacesCardId);
+    typeText += ` · 교환: ${t?t.name:'(삭제된 카드)'}`;
+  } else {
+    const replacedBy = STATE.cards.filter(c=>c.replacesCardId===card.id);
+    if(replacedBy.length){
+      typeText += ` · ${replacedBy.map(c=>versionNameById(card.goddessId,c.versionId)).filter(Boolean).join(', ')}에서 교체됨`;
+    }
+  }
+  document.getElementById('detailType').textContent = typeText;
+  document.getElementById('detailDesc').textContent = card.description || '이 카드는 효과가 없습니다.';
+
+  const attached = STATE.cards.filter(c=>c.parentId===cardId);
+  const wrap = document.getElementById('detailAttachedWrap');
+  const list = document.getElementById('detailAttachedList');
+  if(attached.length){
+    wrap.style.display='block';
+    list.innerHTML = '';
+    attached.forEach(ac=>{
+      const row = document.createElement('div');
+      row.className = 'mini-attach';
+      row.innerHTML = `${ac.image?`<img src="${ac.image}">`:'<div style="width:40px;height:56px;background:#2a2130;border-radius:5px;"></div>'}
+        <div class="t">${ac.name}<small>${(ac.description||'').slice(0,30)}</small></div>`;
+      row.onclick = ()=>openDetailModal(ac.id);
+      list.appendChild(row);
+    });
+  } else {
+    wrap.style.display='none';
+  }
+  document.getElementById('btnAddAttach').style.display = card.type==='extra' ? 'none' : 'inline-block';
+  overlayDetail.classList.add('show');
+}
+document.getElementById('detailClose').onclick = ()=>overlayDetail.classList.remove('show');
+document.getElementById('btnEditCard').onclick = ()=>{
+  overlayDetail.classList.remove('show');
+  const card = STATE.cards.find(c=>c.id===currentDetailCardId);
+  openCardModal({type: card.type, editId: card.id});
+};
+document.getElementById('btnAddAttach').onclick = ()=>{
+  overlayDetail.classList.remove('show');
+  openCardModal({type:'extra', forceParentId: currentDetailCardId});
+};
+
+/* ================= 여신 추가 모달 ================= */
+const overlayGod = document.getElementById('overlayGod');
+let pendingGodImage = null;
+function openNewGodModal(){
+  pendingGodImage = null;
+  document.getElementById('newGodNameInput').value='';
+  document.getElementById('newGodImgPreview').style.display='none';
+  document.getElementById('newGodImgPlaceholder').style.display='block';
+  overlayGod.classList.add('show');
+}
+document.getElementById('newGodImgDrop').onclick = ()=>document.getElementById('newGodImgFile').click();
+document.getElementById('newGodImgFile').addEventListener('change', async e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const raw = await fileToDataUrl(f);
+  pendingGodImage = await resizeImage(raw, 480);
+  document.getElementById('newGodImgPreview').src = pendingGodImage;
+  document.getElementById('newGodImgPreview').style.display='block';
+  document.getElementById('newGodImgPlaceholder').style.display='none';
+});
+document.getElementById('newGodCancel').onclick = ()=>overlayGod.classList.remove('show');
+document.getElementById('newGodSave').onclick = async ()=>{
+  const name = document.getElementById('newGodNameInput').value.trim();
+  if(!name){ toast('여신 이름을 입력해주세요'); return; }
+  STATE.goddesses.push({id:uid(), name, images: pendingGodImage ? [pendingGodImage] : []});
+  await saveState();
+  overlayGod.classList.remove('show');
+  renderGodList();
+  toast('여신을 추가했어요');
+};
+
+/* ================= 설정 (Apps Script URL) ================= */
+const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzRzObNd3t7h50q85bVtF6qSxbY4agSzo4jyKA4TyjNsbhGn8E8x5cKha8cdb5H09M/exec';
+const overlaySettings = document.getElementById('overlaySettings');
+document.getElementById('btnSettings').onclick = ()=>{
+  document.getElementById('scriptUrlInput').value = localStorage.getItem('scriptUrl') || DEFAULT_SCRIPT_URL;
+  overlaySettings.classList.add('show');
+};
+document.getElementById('settingsCancel').onclick = ()=>overlaySettings.classList.remove('show');
+document.getElementById('settingsSave').onclick = ()=>{
+  localStorage.setItem('scriptUrl', document.getElementById('scriptUrlInput').value.trim());
+  overlaySettings.classList.remove('show');
+  toast('설정을 저장했어요');
+};
+document.getElementById('scriptUrlCopyBtn').onclick = async ()=>{
+  const val = document.getElementById('scriptUrlInput').value.trim();
+  if(!val) return;
+  try{
+    await navigator.clipboard.writeText(val);
+    toast('주소를 복사했어요');
+  }catch(err){
+    // 클립보드 접근이 막힌 환경(일부 미리보기 등)에서는 직접 선택되게 처리
+    const input = document.getElementById('scriptUrlInput');
+    input.focus(); input.select();
+    toast('복사 권한이 없어 직접 선택해뒀어요. Ctrl+C로 복사해주세요');
+  }
+};
+
+/* ================= 드라이브에서 가져오기 (다른 사람이 올린 것도 반영) ================= */
+async function fetchFromDrive(silent){
+  const url = localStorage.getItem('scriptUrl') || DEFAULT_SCRIPT_URL;
+  if(!url) return;
+  try{
+    const res = await fetch(url, { method:'GET' });
+    const data = await res.json();
+    if(!data.goddesses || !data.cards) throw new Error('형식 오류');
+
+    // 드라이브 쪽 내용을 최신으로 보고 병합 (id 기준, 로컬에만 있는 아직 안 보내진 것도 보존)
+    const godMap = {};
+    STATE.goddesses.forEach(g=>{ godMap[g.id] = g; });
+    data.goddesses.forEach(g=>{ godMap[g.id] = g; });
+    STATE.goddesses = Object.values(godMap);
+
+    const cardMap = {};
+    STATE.cards.forEach(c=>{ cardMap[c.id] = c; });
+    data.cards.forEach(c=>{ cardMap[c.id] = c; });
+    STATE.cards = Object.values(cardMap);
+
+    migrateGodImages();
+    await idbSet('maindata', STATE); // saveState()를 쓰면 다시 드라이브로 전송을 예약해서 idbSet만 직접 호출
+    renderGodList();
+    if(currentGodId){ renderGodHeader(); renderBonusForm(); renderCardFlows(); if(currentTab==='another') renderAnotherTab(); }
+    if(!silent) toast('드라이브 데이터를 가져왔어요');
+  }catch(err){
+    if(!silent) toast('가져오기 실패: 드라이브 설정 또는 네트워크를 확인해주세요');
+  }
+}
+document.getElementById('btnFetchFromDrive').onclick = ()=>fetchFromDrive(false);
+
+// 30초마다 자동으로 드라이브를 확인해서, 다른 사람이 올린 내용도 자동 반영
+setInterval(()=>fetchFromDrive(true), 30000);
+
+/* ================= 내보내기 / 불러오기 / 드라이브 전송 ================= */
+document.getElementById('btnExport').onclick = ()=>{
+  const blob = new Blob([JSON.stringify(STATE, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `sakura-duel-cards-${Date.now()}.json`;
+  a.click();
+};
+document.getElementById('btnImport').onclick = ()=>document.getElementById('importFile').click();
+document.getElementById('importFile').addEventListener('change', async e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const text = await f.text();
+  try{
+    const data = JSON.parse(text);
+    if(!data.goddesses || !data.cards) throw new Error('형식 오류');
+    if(await askConfirm('현재 데이터에 불러온 데이터를 합칠까요? (취소=현재 데이터를 덮어씀)')){
+      // 병합: id 충돌 없는 것만 추가
+      const existingGodIds = new Set(STATE.goddesses.map(g=>g.id));
+      data.goddesses.forEach(g=>{ if(!existingGodIds.has(g.id)) STATE.goddesses.push(g); });
+      const existingCardIds = new Set(STATE.cards.map(c=>c.id));
+      data.cards.forEach(c=>{ if(!existingCardIds.has(c.id)) STATE.cards.push(c); });
+    } else {
+      STATE = data;
+    }
+    migrateGodImages();
+    await saveState();
+    renderGodList();
+    toast('불러오기 완료');
+  }catch(err){
+    toast('올바른 JSON 파일이 아니에요');
+  }
+  e.target.value = '';
+});
+
+async function getContributorName(){
+  let name = localStorage.getItem('contributorName');
+  if(!name){
+    name = (await askText('이름/닉네임을 입력해주세요', '')) || 'unknown';
+    localStorage.setItem('contributorName', name);
+  }
+  return name;
+}
+
+async function sendToDrive(){
+  const url = localStorage.getItem('scriptUrl');
+  if(!url) return;
+  const contributor = await getContributorName();
+  try{
+    await fetch(url, {
+      method:'POST',
+      mode:'no-cors', // Apps Script 웹앱은 보통 CORS 응답이 없어 no-cors로 보냄(응답 본문은 못 읽음)
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({
+        contributor,
+        sentAt: new Date().toISOString(),
+        data: STATE
+      })
+    });
+    toast('자동으로 드라이브에 저장됐어요');
+  }catch(err){
+    // 자동 전송이라 실패해도 조용히 넘어감(다음 저장 때 다시 시도됨)
+  }
+}
+
+// 카드/여신이 바뀔 때마다 잠깐 기다렸다가(연속 입력을 하나로 묶기 위해) 자동으로 전송
+let autoSendTimer = null;
+function scheduleAutoSend(){
+  if(!localStorage.getItem('scriptUrl')) return; // 설정 전에는 자동전송 안 함
+  clearTimeout(autoSendTimer);
+  autoSendTimer = setTimeout(()=>sendToDrive(), 2500);
+}
+
+/* 모달 바깥(빈 배경) 클릭하면 닫기 */
+document.querySelectorAll('.overlay').forEach(overlay=>{
+  overlay.addEventListener('click', (e)=>{
+    if(e.target === overlay) overlay.classList.remove('show');
+  });
+});
+
+/* ================= 초기화 ================= */
+(async function init(){
+  db = await openDB();
+  await loadState();
+  renderGodList();
+  fetchFromDrive(true); // 열자마자 다른 사람이 올린 최신 데이터도 조용히 가져옴
+})();
+
+/* ================= 클립보드 이미지 붙여넣기 ================= */
+async function clipboardImageToDataUrl(e){
+  const items = (e.clipboardData || window.clipboardData)?.items;
+  if(!items) return null;
+  for(const item of items){
+    if(item.type && item.type.startsWith('image/')){
+      const file = item.getAsFile();
+      if(file) return await fileToDataUrl(file);
+    }
+  }
+  return null;
+}
+
+document.addEventListener('paste', async (e)=>{
+  const raw = await clipboardImageToDataUrl(e);
+  if(!raw) return; // 이미지가 아니면 평소대로(텍스트 붙여넣기 등) 동작
+
+  if(overlayCard.classList.contains('show')){
+    e.preventDefault();
+    const resized = await resizeImage(raw, 640);
+    pendingCardImage = resized;
+    document.getElementById('cardImgPreview').src = resized;
+    document.getElementById('cardImgPreview').style.display='block';
+    document.getElementById('cardImgPlaceholder').style.display='none';
+    toast('붙여넣은 이미지를 넣었어요');
+  } else if(overlayGod.classList.contains('show')){
+    e.preventDefault();
+    pendingGodImage = await resizeImage(raw, 480);
+    document.getElementById('newGodImgPreview').src = pendingGodImage;
+    document.getElementById('newGodImgPreview').style.display='block';
+    document.getElementById('newGodImgPlaceholder').style.display='none';
+    toast('붙여넣은 이미지를 넣었어요');
+  } else if(currentGodId && currentTab==='another' && currentAnotherVersionId && document.getElementById('viewGodDetail').style.display !== 'none'){
+    e.preventDefault();
+    const resized = await resizeImage(raw, 480);
+    const g = STATE.goddesses.find(x=>x.id===currentGodId);
+    const v = (g.anotherVersions||[]).find(v=>v.id===currentAnotherVersionId);
+    if(v){
+      v.image = resized;
+      await saveState();
+      renderAnotherPortrait();
+      toast('붙여넣은 이미지로 어나더 폼을 바꿨어요');
+    }
+  } else if(currentGodId && document.getElementById('viewGodDetail').style.display !== 'none'){
+    e.preventDefault();
+    const resized = await resizeImage(raw, 480);
+    const g = STATE.goddesses.find(x=>x.id===currentGodId);
+    if(!g.images) g.images = [];
+    g.images.push(resized);
+    currentGodPortraitIndex = g.images.length - 1;
+    await saveState();
+    renderGodHeader();
+    renderGodList();
+    toast('붙여넣은 이미지를 그림 목록에 추가했어요');
+  }
+});
+</script>
+</body>
+</html>
